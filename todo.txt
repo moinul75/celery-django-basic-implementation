@@ -1,0 +1,133 @@
+To use Celery in Django -> to handle multiple Data work flow 
+
+1. Create file in the projects directory -> Named celery.py 
+2. Copy this avobe code below inside this celery.py file 
+
+import os
+
+from celery import Celery
+
+# Set the default Django settings module for the 'celery' program. note proj means your projectsName (proj==projectsName)
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'proj.settings')
+
+app = Celery('proj') #change this proj with your projects name 
+
+# Using a string here means the worker doesn't have to serialize
+# the configuration object to child processes.
+# - namespace='CELERY' means all celery-related configuration keys
+#   should have a `CELERY_` prefix.
+app.config_from_object('django.conf:settings', namespace='CELERY')
+
+# Load task modules from all registered Django apps.
+app.autodiscover_tasks()
+
+
+@app.task(bind=True, ignore_result=True)
+def debug_task(self):
+    print(f'Request: {self.request!r}')
+
+Note: should customize with your projects name and directory name and also others config 
+3. change and add this avobe line  in the __init__.py file (projects/__init__.py)
+
+from .celery import app as celery_app
+
+__all__ = ('celery_app',)
+
+4. We need to install radis 
+ pip install redis 
+
+5. now go to the program file and srach radis and radis cli for the redis port (Desktop must have this REDiS CLI)
+6. Now change and create some settings on raddis in the settings.py file 
+
+CELERY_BROKER_URL = 'radis://RADIS_URL_PORT_CLI/'  #redis should be install in our pc inoder to do that task 
+CELERY_RESULT_BACKEND = 'radis://127.0.0.1:port/' 
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'
+
+
+7. now pip install celery 
+
+8. create a task.py in the app folder 
+
+
+9. Now go to the task.py file and then write some logic do do the task 
+
+from celery import shared_task (all that work done by shared_task decorator)
+from time import sleep 
+
+@shared_task   
+def sleepy(duration): #this function is not same we need to change and configure based on our function 
+    sleep(duration)
+    return None 
+
+
+10. run the celery server with redis
+
+Note: on Windows its not possible to do this directly so we need a package to do this here's the package named eventlet 
+ pip install eventlet 
+
+To run this celery Server we need to command this belor 
+  celery -A Celery_Practice worker -l info -P eventlet #here (<module> === app)
+
+
+
+11. now finally we can use celery to work more efficiently 
+
+in the app/views.py file 
+
+form .task import * 
+
+def index(request):
+   sleep(100) # the server will take 100 sec time to load which is a bad impression traffic will lose (to handle this we use celery)
+   return HttpResponse("Hello world")
+
+#we want this load fast in production but late work in server 
+Todo so we just modify this sleep into sleep.delay(10) # now forntend ui response fast but in the backend will response late in the celery apps 
+
+def index(requet):
+  sleep.delay(10)
+  return HttpResponse("Hello World")
+
+Real World Example of use Celery 
+
+Email Sending : 
+    
+1. go to app/task.py file 
+  -> form django.mail import send_mail 
+  -> write a function under @shared_task dandar method 
+  @shared_task
+  def send_mail_task():
+    send_mail(
+        'Celery worked yeah','CELERY application',
+        "form Email",
+        ['TO EMAIL'],
+        fail_silently = False
+    )
+    return None
+
+2. Now goto the app/views.py where we sent the mail 
+  
+  form .task import * 
+
+  def send_mail_with_celery(request):
+    send_mail_task.delay() # this will send the mail super fast load the page just need 1 sec in the ui 
+    return HttpResponse("Hello World")
+
+
+#We can use this when post Image,File(pdf,docx,dwonload something)
+
+
+Projects One Example: File Converter using Django celery 
+
+Assingment : File converter application using Django 
+
+
+
+
+
+
+
+
+
+

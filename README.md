@@ -1,1 +1,1 @@
-#"celery-django-basic-implementation" 
+#"celery-django-basic-implementations" 
